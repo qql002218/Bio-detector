@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CsvFileAttributes">
+    <option name="attributeMap">
+      <map>
+        <entry key="/LogFile/2021-11-29/21:50:46-游泳实验/辐照小鼠运动距离.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/LogFile/2021-11-30/09:53:43-游泳实验/辐照小鼠运动距离.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/LogFile/2021-11-30/10:26:18-游泳实验/辐照小鼠运动距离.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/LogFile/2021-11-30/10:47:38-辐照跟踪实验/辐照小鼠运动距离.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/LogFile/2021-11-30/16:25:35-辐照跟踪实验/辐照小鼠运动距离.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/LogFile/2021-11-30/16:41:06-辐照跟踪实验/辐照小鼠运动距离.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/LogFile/2021-11-30/19:59:24-辐照跟踪实验/辐照小鼠运动距离.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/LogFile/2021-11-30/20:44:37-辐照跟踪实验/辐照小鼠运动距离.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/LogFile/2021-12-01/11:23:21-辐照跟踪实验/辐照小鼠运动距离.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/MainWindow/Experiments.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
