@@ -410,7 +410,7 @@
      <string>打开视频</string>
     </property>
    </widget>
-   <widget class="QTextEdit" name="textEdit">
+   <widget class="QTextEdit" name="expResinfo">
     <property name="geometry">
      <rect>
       <x>1060</x>

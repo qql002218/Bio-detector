@@ -96,6 +96,8 @@ class CamShow(QMainWindow, Ui_MainWindow):
         _, out, _ = self.ssh.exec_command(f"{command}")
         pid = out.readlines()[0].replace('/n', '')
         self.ssh.exec_command(f"kill {pid}")
+        time.sleep(0.5)
+        self.expResinfo.setText(self.resinfo)
 
     ##主窗口的 系统时间相关
     def showtime(self):
@@ -230,29 +232,39 @@ class CamShow(QMainWindow, Ui_MainWindow):
         logFile.write(self.info)
         logFile.close()
 
+
         # videowriter = cv2.VideoWriter(path+'/实验视频.avi', cv2.VideoWriter_fourcc('I', '4', '2', '0'), 20, (741,491))
-        videowriter = cv2.VideoWriter(path + '/MyoutputVid.avi', cv2.VideoWriter_fourcc('X', 'V', 'I', 'D'), 20,
-                                      (741, 491))
+
         saveflag = True if self.savevidBox.isChecked() else False
+        if saveflag:
+            videowriter = cv2.VideoWriter(path + '/MyoutputVid.avi', cv2.VideoWriter_fourcc('X', 'V', 'I', 'D'), 20,
+                                      (741, 491))
+        # print('save flag is{}'.format(saveflag))
         self.recvSocket = socket(AF_INET, SOCK_DGRAM)
         self.recvSocket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         self.recvSocket.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
         self.recvSocket.bind(('', 10101))
         det = Detector()
         flag = 'rect' if self.fixdata.get('line') is None else 'line'
-        x = self.fixdata.get(flag)[1][0] - self.fixdata.get(flag)[0][0]
-        y = self.fixdata.get(flag)[1][1] - self.fixdata.get(flag)[0][1]
-        width = int(self.para.get('width'))
-        hight = int(self.para.get('hight'))
-        px_convert = round(math.sqrt((width / x) ** 2 + ((hight / y) ** 2)), 2)
-        print(f'px_convert:{px_convert}')
-        print(f'x:{x}')
-        print(f'y:{y}')
-        print(f'widith:{width}')
-        print(f'hight:{hight}')
-        self.torchDet = torch(flag, self.fixdata.get(flag), det, px_convert)
-        self.logQueue.put('torch 模型已经load成功... \n')
-        self.sub_data = [path]
+        if flag is 'rect':
+            x = self.fixdata.get(flag)[1][0] - self.fixdata.get(flag)[0][0]
+            y = self.fixdata.get(flag)[1][1] - self.fixdata.get(flag)[0][1]
+            width = int(self.para.get('width'))
+            hight = int(self.para.get('hight'))
+            px_convert = round(math.sqrt((width / x) ** 2 + ((hight / y) ** 2)), 2)
+            # print(f'px_convert:{px_convert}')  #坐标值换算
+            # print(f'x:{x}')
+            # print(f'y:{y}')
+            # print(f'widith:{width}')
+            # print(f'hight:{hight}')
+            self.torchDet = torch(flag, self.fixdata.get(flag), det, px_convert)
+        else:
+            self.torchDet = torch(flag, self.fixdata.get(flag), det, 0) #划线操作 px_convert 可以缺省
+        self.logQueue.put('模型已加载完毕...\n')
+        self.sub_data=[path]
+        # self.sub_data.append(self.exptemp)
+        #这块注意时序问题，点击实验开始按钮，data signal emit ，其长度为2，包含路径信息 和实验名称
+
 
         while 1:
             # 接收数据格式：(data, (ip, port))
@@ -276,19 +288,31 @@ class CamShow(QMainWindow, Ui_MainWindow):
             if self.stopEvent.is_set():
                 sendData = '1'
                 self.stopEvent.clear()
-                self.recvSocket.sendto(sendData.encode("utf-8"), ('10.192.44.57', 10102))
+                # self.recvSocket.sendto(sendData.encode("utf-8"), ('10.192.44.57', 10102))
                 print("线程已经结束")
-                videowriter.release()
+                if saveflag:
+                    videowriter.release()
+                self.logQueue.put('{}实验结束\n'.format(self.exptemp))
                 break
         logFile = open(file_path, 'a')
         logFile.write('------------实验结果-------------\n')
         info = ''
-        logFile.write(self.info)
-        for j in range(1,len(self.sub_data)):
-            if len(self.sub_data[j]) != 0:
-                temp = self.sub_data[j]
-                result = temp[len(temp[0])][1]
-                info=info+'traker_{} 老鼠，运动距离为 {} cm\n'.format(j,result)
+        if flag is 'rect':
+            for j in range(1,len(self.sub_data)):
+                if len(self.sub_data[j]) != 0:
+                    temp = self.sub_data[j]
+                    result = temp[len(temp)-1][1]
+                    info=info+'traker_{} 老鼠，运动距离为 {} cm\n'.format(j,result)
+            logFile.write(info)
+
+        if flag is 'line':
+            for i in range(len(self.sub_data)):
+                if len(self.sub_data[i]) != 0:
+                    info = info+'tracker_{}老鼠，在{}中坚持时间为{}s\n'.format(i,self.exptemp,self.sub_data[i])
+            logFile.write(info)
+        self.resinfo = info
+
+
 
 
 
@@ -402,6 +426,7 @@ class CamShow(QMainWindow, Ui_MainWindow):
                 self.recvSocket.sendto(sendData.encode("utf-8"), ('10.192.44.57', 10102))
                 self.frametemp = decimg
                 print("线程已经结束")
+                self.logQueue.put('远程视频联通测试结束，标定照片已保存....\n')
                 break
 
     def openMyDialog(self):
@@ -421,11 +446,11 @@ class CamShow(QMainWindow, Ui_MainWindow):
         if self.rolate.isChecked():
             self.exptemp = '转棒实验'
             pre = '开始进行 转棒实验\n'
-            info_2 = '转速：{} r/min 加速度：{} r/min2'.format(self.para.get('rotate_v'), self.para.get('rotate_a'))
+            info_2 = '转速：{} r/min 加速度：{} r/min2\n'.format(self.para.get('rotate_v'), self.para.get('rotate_a'))
         if self.track.isChecked():
             self.exptemp = '辐照跟踪实验'
             pre = '开始进行 辐照跟踪实验 \n'
-            info_2 = '运动区域:长 {} cm 宽{} cm'.format(self.para.get('hight'), self.para.get('width'))
+            info_2 = '运动区域:长 {} cm 宽{} cm \n'.format(self.para.get('hight'), self.para.get('width'))
         if self.swim.isChecked():
             self.exptemp = '游泳实验'
             pre = '开始进行 游泳实验\n'
@@ -442,8 +467,8 @@ class CamShow(QMainWindow, Ui_MainWindow):
                                      self.para.get("tiaozhi_bias"), self.para.get("wave"), self.para.get("distance"))
 
         self.info = pre + info + info_2
-        self.logQueue.put('--------------------实验开始---------------------\n')
-        self.logQueue.put(self.info)
+        self.logQueue.put(f'----------------------{self.exptemp}实验开始---------------------\n')
+        self.logQueue.put('系统参数设定完毕...\n')
         self.testinfo.setText(self.info)
 
 

@@ -87,7 +87,6 @@ class torch:
 
                     color = [int(c) for c in self.COLORS[track_id % len(self.COLORS)]]
 
-
                     # 撞线的点
                     y = int((y1 + y2) * 0.5)
                     x = int((x1 + x2) * 0.5)
@@ -105,17 +104,19 @@ class torch:
                         self.distRes['{}'.format(track_id)]=0
                         self.data[track_id] = []  #为响应的tracker_id初始化data list
 
-                    if self.dic[0][0] < x < self.dic[1][0] and self.dic[0][1] < y < self.dic[1][1]:
-                        if track_id not in self.list_overlapping_region:
-                            self.json['{}_ed'.format(track_id)] = time.time()
-                            self.list_overlapping_region.append(track_id)
-                            timestamp = round(self.json['{}_ed'.format(track_id)] - self.json['{}_st'.format(track_id)], 2)
-                            print("{} 停留时间为{}s".format(track_id, timestamp))
-                        pass
+                    # if self.dic[0][0] < x < self.dic[1][0] and self.dic[0][1] < y < self.dic[1][1]:
+                    #     if track_id not in self.list_overlapping_region:
+                    #         self.json['{}_ed'.format(track_id)] = time.time()
+                    #         self.list_overlapping_region.append(track_id)
+                    #         timestamp = round(self.json['{}_ed'.format(track_id)] - self.json['{}_st'.format(track_id)], 2)
+                    #         print("{} 停留时间为{}s".format(track_id, timestamp))
+                    #     pass
 
                     self.pts[track_id].append(center)
                     disttemp = self.distance(center, self.precenter[
                         '{}'.format(track_id)]) if track_id in self.list_region else 0
+                    if disttemp >=1:
+                        disttemp = disttemp-1
                     # print(disttemp)
                     # disttemp = self.distRes[''.format(track_id)] + disttemp
                     # if disttemp <= 1:
@@ -172,7 +173,9 @@ class torch:
                             self.json['{}_ed'.format(track_id)] = time.time()
                             timestamp = round(self.json['{}_ed'.format(track_id)] - self.json['{}_st'.format(track_id)], 2)
                             print("{} 停留时间为{}s".format(track_id, timestamp))
+                            self.data[track_id].append(timestamp) #把时间加入
                         pass
+
             return output_image_frame
 
 
