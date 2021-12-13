@@ -101,6 +101,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/LogFile/2021-12-12/17:02:40-辐照跟踪实验/辐照小鼠运动距离.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
       </map>
     </option>
   </component>
