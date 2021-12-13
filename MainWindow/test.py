@@ -2,12 +2,15 @@ import os
 import time
 from collections import deque
 import sys
+
+import tracker
+from detector import Detector
+
 ROOT_DIR = os.path.abspath("../../../PycharmProjects")
-sys.path.append(os.path.join(ROOT_DIR, "/"))  #模型存放路径
+sys.path.append(os.path.join(ROOT_DIR, "/"))  # 模型存放路径
 import numpy as np
 
 import cv2
-
 
 if __name__ == '__main__':
 
@@ -104,5 +107,3 @@ if __name__ == '__main__':
 
     capture.release()
     cv2.destroyAllWindows()
-
-

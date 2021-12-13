@@ -397,7 +397,7 @@
      <string>数据可视化</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QPushButton" name="btn_openVid">
     <property name="geometry">
      <rect>
       <x>1050</x>

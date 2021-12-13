@@ -6,6 +6,7 @@ from PyQt5.QtGui import QPixmap, QTextCursor
 import threading
 
 from MainWindow.subwindow import App
+from resVIew import myMainWindow
 from MainWindow.video import Ui_MainWindow
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QThread, pyqtSignal, QCoreApplication, QDateTime, QTimer
@@ -27,6 +28,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow
 from MainWindow.gongju import DrawLineWidget, cv2ImgAddText, torch
 from detector import Detector
 from pyqt.login.log import LogFile
+import json
 
 
 # ROOT_DIR = os.path.abspath("../../../PycharmProjects")
@@ -52,6 +54,7 @@ class CamShow(QMainWindow, Ui_MainWindow):
         self.stopEvent = threading.Event()
         self.exitbtn.clicked.connect(self.exit)
         self.pushButton_2.clicked.connect(self.expEnd)
+        self.btn_openVid.clicked.connect(self.resultView)
 
         self.stopEvent.clear()
         self.time = time.strftime("%Y-%m-%d", time.localtime())
@@ -72,6 +75,8 @@ class CamShow(QMainWindow, Ui_MainWindow):
         self.timer = QTimer()
         self.timer.timeout.connect(self.showtime)
         self.starttimer()
+        #数据回放窗口
+        self.resview = myMainWindow()
         # 子窗口和父窗口通信
         self.sub_win = App()
         # 可视化数据
@@ -89,6 +94,9 @@ class CamShow(QMainWindow, Ui_MainWindow):
 
     def visualizeData(self):
         self.sub_win.show()
+    #数据回放窗口展示
+    def resultView(self):
+        self.resview.show()
 
     def expEnd(self):  # 实验结束应该做的事
         self.stopEvent.set()
@@ -98,6 +106,9 @@ class CamShow(QMainWindow, Ui_MainWindow):
         self.ssh.exec_command(f"kill {pid}")
         time.sleep(0.5)
         self.expResinfo.setText(self.resinfo)
+
+
+
 
     ##主窗口的 系统时间相关
     def showtime(self):
@@ -177,7 +188,7 @@ class CamShow(QMainWindow, Ui_MainWindow):
         host_port = 22
         password = 'qiaoge'  # 密码
         dest_ip = self.sshiptext.text()  # 文本行获得远端连接IP
-        dest_ip = '10.192.13.97'
+        # dest_ip = '10.192.61.97'
         print(dest_ip)
         self.ssh = paramiko.SSHClient()  # 用paramiko建立客户端
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -228,6 +239,10 @@ class CamShow(QMainWindow, Ui_MainWindow):
             os.mkdir(path)  # 创建实验文件夹
         file_path = path + '/实验报告'
         os.system("touch {}".format(file_path))  # 创建实验报告
+
+        json_path = path + 'json数据.json'
+
+
         logFile = open(file_path, 'a')
         logFile.write(self.info)
         logFile.close()
@@ -237,7 +252,9 @@ class CamShow(QMainWindow, Ui_MainWindow):
 
         saveflag = True if self.savevidBox.isChecked() else False
         if saveflag:
-            videowriter = cv2.VideoWriter(path + '/MyoutputVid.avi', cv2.VideoWriter_fourcc('X', 'V', 'I', 'D'), 20,
+            videowriter = cv2.VideoWriter(path + '/MyoutputVid-pre.avi', cv2.VideoWriter_fourcc('X', 'V', 'I', 'D'), 20,
+                                      (741, 491))
+            videowriter2 = cv2.VideoWriter(path + '/MyoutputVid-lst.avi', cv2.VideoWriter_fourcc('X', 'V', 'I', 'D'), 20,
                                       (741, 491))
         # print('save flag is{}'.format(saveflag))
         self.recvSocket = socket(AF_INET, SOCK_DGRAM)
@@ -275,6 +292,8 @@ class CamShow(QMainWindow, Ui_MainWindow):
                 if saveflag:
                     videowriter.write(decimg)
                 decimg = self.torchDet.torchdetect(decimg)
+                if saveflag:
+                    videowriter2.write(decimg)
                 # print("imshow........")
             img = cv2.cvtColor(decimg, cv2.COLOR_BGR2RGB)
             qimg = qimage2ndarray.array2qimage(img)
@@ -292,6 +311,7 @@ class CamShow(QMainWindow, Ui_MainWindow):
                 print("线程已经结束")
                 if saveflag:
                     videowriter.release()
+                    videowriter2.release()
                 self.logQueue.put('{}实验结束\n'.format(self.exptemp))
                 break
         logFile = open(file_path, 'a')
@@ -311,11 +331,12 @@ class CamShow(QMainWindow, Ui_MainWindow):
                     info = info+'tracker_{}老鼠，在{}中坚持时间为{}s\n'.format(i,self.exptemp,self.sub_data[i])
             logFile.write(info)
         self.resinfo = info
-
-
-
-
-
+        self.para['result'] = self.resinfo
+        jaso_path = path+'/record.json'
+        with open(jaso_path, 'w+',encoding='utf-8') as f: #将最后的结果进行存储成json 格式
+            json.dump(self.para,f,ensure_ascii=False,indent = 4)
+            print("加载入文件完成...")
+            f.close()
 
     # def yolodetect(self):
     #     # self.temp = yolo.YOLO()
@@ -465,8 +486,14 @@ class CamShow(QMainWindow, Ui_MainWindow):
                '辐照距离：{5} m\n'.format(self.para.get("zaibo_freq"), self.para.get("zaibo_power"),
                                      self.para.get("tiaozhi_amp"),
                                      self.para.get("tiaozhi_bias"), self.para.get("wave"), self.para.get("distance"))
+        self.para['exp'] = self.exptemp
+
 
         self.info = pre + info + info_2
+        # self.json ={ '实验名称':self.exptemp,"载波频率":self.para.get("zaibo_freq"),'载波幅值':self.para.get("zaibo_power"),'幅值':self.para.get("tiaozhi_amp"),
+        #              '偏置':self.para.get("tiaozhi_bias"),'波形':self.para.get("wave"),'辐照距离':self.para.get("distance"),'转棒转速':self.para.get('rotate_v'),
+        #              '转棒加速度':self.para.get('rotate_a'),'运动区域长':self.para.get('hight'),'运动区域宽':self.para.get('width')
+        # }
         self.logQueue.put(f'----------------------{self.exptemp}实验开始---------------------\n')
         self.logQueue.put('系统参数设定完毕...\n')
         self.testinfo.setText(self.info)
